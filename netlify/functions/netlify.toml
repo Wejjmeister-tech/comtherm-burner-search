@@ -2,12 +2,12 @@
   functions = "netlify/functions"
 
 [[headers]]
-  # Define which paths this specific [[headers]] block will cover.
-  for = "/*"
-    [headers.values]
-    Access-Control-Allow-Origin = "https://comtherm-site.webflow.io"
-    Access-Control-Allow-Headers = "Content-Type,Authorization"
-    Access-Control-Allow-Methods = "GET,POST,OPTIONS"
+ const headers = {
+  'Access-Control-Allow-Origin': 'https://comtherm-site.webflow.io', // Your Webflow site URL
+  'Access-Control-Allow-Headers': 'Content-Type,Authorization',
+  'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
+  'Content-Type': 'application/json'
+};
 
 [[redirects]]
   from = "/api/*"
