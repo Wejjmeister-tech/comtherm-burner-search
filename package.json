@@ -1,0 +1,21 @@
+{
+  "name": "comtherm-burner-search",
+  "version": "1.0.0",
+  "description": "Comtherm Burner Parts List Search",
+  "main": "index.js",
+  "scripts": {
+    "start": "netlify dev",
+    "build": "netlify build"
+  },
+
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.49.5"
+  },
+  "devDependencies": {
+    "netlify-cli": "^21.5.0"
+  }
+}

@@ -1,0 +1,15 @@
+[build]
+  functions = "netlify/functions"
+
+[[headers]]
+  # Define which paths this specific [[headers]] block will cover.
+  for = "/*"
+    [headers.values]
+    Access-Control-Allow-Origin = "https://comtherm-site.webflow.io"
+    Access-Control-Allow-Headers = "Content-Type,Authorization"
+    Access-Control-Allow-Methods = "GET,POST,OPTIONS"
+
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
