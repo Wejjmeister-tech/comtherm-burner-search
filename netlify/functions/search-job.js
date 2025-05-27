@@ -1,16 +1,16 @@
 // netlify/functions/search-job.js
 const { createClient } = require('@supabase/supabase-js');
 
-// Supabase connection details
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
 
 exports.handler = async function(event, context) {
-  // Set CORS headers to allow requests from your Webflow site
+  // Updated CORS headers - allow your specific domain
   const headers = {
-    'Access-Control-Allow-Origin': '*', // Allow all origins for testing, restrict to your domain in production
+    'Access-Control-Allow-Origin': 'https://comtherm-site.webflow.io', // Your specific domain
     'Access-Control-Allow-Headers': 'Content-Type,Authorization',
     'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
+    'Access-Control-Allow-Credentials': 'true',
     'Content-Type': 'application/json'
   };
   
@@ -24,15 +24,12 @@ exports.handler = async function(event, context) {
   }
   
   try {
-    // Create Supabase client
     const supabase = createClient(supabaseUrl, supabaseKey);
     
-    // Parse the request body or query parameters
     const params = event.httpMethod === 'POST' 
       ? JSON.parse(event.body || '{}')
       : event.queryStringParameters || {};
     
-    // Get the job number from the request
     const jobNumber = params.jobNumber;
     
     if (!jobNumber) {
@@ -44,18 +41,11 @@ exports.handler = async function(event, context) {
     }
     
     console.log(`Searching for job with number: ${jobNumber}`);
-
-// In your search-job.js function, make sure the job query includes burner_type
-const { data: job, error: jobError } = await supabase
-  .from('jobs')
-  .select('job_number, customer_name, filename, created_at, burner_type') // Add burner_type here
-  .eq('job_number', jobNumber)
-  .single();
     
-    // Fetch job data from Supabase
+    // Fetch job data - MAKE SURE TO INCLUDE burner_type
     const { data: job, error: jobError } = await supabase
       .from('jobs')
-      .select('*')
+      .select('job_number, customer_name, filename, created_at, burner_type') // Include burner_type
       .eq('job_number', jobNumber)
       .single();
     
@@ -76,7 +66,9 @@ const { data: job, error: jobError } = await supabase
       };
     }
     
-    // Fetch components for this job, grouped by sheet
+    // Rest of your existing code...
+    // (fetch components, electrical items, group by sheet, etc.)
+    
     const { data: components, error: componentsError } = await supabase
       .from('job_components')
       .select('*')
@@ -92,18 +84,6 @@ const { data: job, error: jobError } = await supabase
       };
     }
     
-    // Fetch electrical items for this job, grouped by sheet
-    const { data: electricalItems, error: electricalError } = await supabase
-      .from('job_electrical_items')
-      .select('*')
-      .eq('job_number', jobNumber)
-      .order('sheet_name, item_code', { ascending: true });
-    
-    if (electricalError) {
-      console.error('Error fetching electrical items:', electricalError);
-      // Don't return error, just log it as electrical items are optional
-    }
-    
     // Group components by sheet name
     const componentSheets = {};
     if (components && components.length > 0) {
@@ -116,58 +96,16 @@ const { data: job, error: jobError } = await supabase
       });
     }
     
-    // Group electrical items by sheet name
-    const electricalSheets = {};
-    if (electricalItems && electricalItems.length > 0) {
-      electricalItems.forEach(item => {
-        const sheetName = item.sheet_name;
-        if (!electricalSheets[sheetName]) {
-          electricalSheets[sheetName] = [];
-        }
-        electricalSheets[sheetName].push(item);
-      });
-    }
+    console.log(`Found job ${jobNumber} with ${Object.keys(componentSheets).length} sheets`);
     
-    // Combine all sheets (components and electrical)
-    const allSheets = { ...componentSheets };
-    
-    // Add electrical sheets with a different structure
-    Object.keys(electricalSheets).forEach(sheetName => {
-      if (!allSheets[sheetName]) {
-        // If it's a pure electrical sheet (no components)
-        allSheets[sheetName] = electricalSheets[sheetName].map(item => ({
-          part_code: item.item_code,
-          part_description: item.description,
-          quantity: item.quantity,
-          tags: item.notes,
-          type: 'electrical'
-        }));
-      } else {
-        // If it's a mixed sheet, add electrical items to existing components
-        electricalSheets[sheetName].forEach(item => {
-          allSheets[sheetName].push({
-            part_code: item.item_code,
-            part_description: item.description,
-            quantity: item.quantity,
-            tags: item.notes,
-            type: 'electrical'
-          });
-        });
-      }
-    });
-    
-    console.log(`Found job ${jobNumber} with ${Object.keys(allSheets).length} sheets`);
-    
-    // Return the job and sheets data
     return {
       statusCode: 200,
       headers,
       body: JSON.stringify({
         job,
-        sheets: allSheets,
-        sheetCount: Object.keys(allSheets).length,
-        totalComponents: components ? components.length : 0,
-        totalElectricalItems: electricalItems ? electricalItems.length : 0
+        sheets: componentSheets,
+        sheetCount: Object.keys(componentSheets).length,
+        totalComponents: components ? components.length : 0
       })
     };
     
