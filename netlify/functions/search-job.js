@@ -44,6 +44,13 @@ exports.handler = async function(event, context) {
     }
     
     console.log(`Searching for job with number: ${jobNumber}`);
+
+// In your search-job.js function, make sure the job query includes burner_type
+const { data: job, error: jobError } = await supabase
+  .from('jobs')
+  .select('job_number, customer_name, filename, created_at, burner_type') // Add burner_type here
+  .eq('job_number', jobNumber)
+  .single();
     
     // Fetch job data from Supabase
     const { data: job, error: jobError } = await supabase
